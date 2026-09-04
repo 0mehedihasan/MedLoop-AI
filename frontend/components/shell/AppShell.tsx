@@ -57,6 +57,15 @@ function SkipLink(): ReactElement {
   );
 }
 
+/** `Spinner` is an inline element by design, so centring it needs a block of its own. */
+function ShellWait({ label }: { readonly label: string }): ReactElement {
+  return (
+    <div className="flex justify-center pt-16">
+      <Spinner label={label} size="lg" showLabel />
+    </div>
+  );
+}
+
 export function AppShell({ children }: AppShellProps): ReactElement {
   const pathname = usePathname();
   const router = useRouter();
@@ -76,7 +85,9 @@ export function AppShell({ children }: AppShellProps): ReactElement {
   const allowed = status === 'authenticated' && canAccess(pathname, role);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-surface-canvas">
+    // No background class: `body` already carries `--surface-page`. `surface-canvas` is the dark
+    // image surround and belongs to the viewer alone.
+    <div className="flex min-h-dvh flex-col">
       <SkipLink />
       <DemoBanner />
       <TopBar />
@@ -85,14 +96,14 @@ export function AppShell({ children }: AppShellProps): ReactElement {
         {area === undefined ? null : <SideNav area={area} />}
         <main id="main" className="min-w-0 flex-1 px-4 py-5 md:px-6">
           {status === 'loading' ? (
-            <Spinner label="Reading your session" className="mx-auto mt-16" />
+            <ShellWait label="Reading your session" />
           ) : allowed ? (
             children
           ) : anonymous ? (
             // Rendered for the frame or two before the effect above navigates. Saying nothing here
             // would flash an empty page; saying "denied" would be a lie about a session that simply
             // has not been established yet.
-            <Spinner label="Redirecting to sign in" className="mx-auto mt-16" />
+            <ShellWait label="Redirecting to sign in" />
           ) : (
             <EmptyState
               title="This section is not available for your role"

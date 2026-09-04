@@ -28,6 +28,7 @@ import type { ReactElement, ReactNode } from 'react';
 import type { Tone } from './Badge';
 import { IconButton } from './Button';
 import { cx } from './cx';
+import { CloseIcon } from './icons';
 import { VisuallyHidden } from './project';
 
 const SURFACE: Readonly<Record<Tone, string>> = {
@@ -131,11 +132,7 @@ export function Alert({
           label={dismissLabel}
           size="sm"
           onClick={onDismiss}
-          icon={
-            <svg viewBox="0 0 12 12" className="h-3 w-3 fill-current">
-              <path d="M1.2 0 6 4.8 10.8 0 12 1.2 7.2 6 12 10.8 10.8 12 6 7.2 1.2 12 0 10.8 4.8 6 0 1.2z" />
-            </svg>
-          }
+          icon={<CloseIcon />}
         />
       )}
     </div>

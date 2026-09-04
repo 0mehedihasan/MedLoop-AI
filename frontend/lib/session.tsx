@@ -24,6 +24,14 @@
  *  - **Expiry is enforced client-side too.** When `expires_at` passes, the provider flips to
  *    `anonymous` on its own. Rendering an authenticated shell over a dead token produces
  *    mysterious 401s in unrelated places, which is a worse failure than an honest sign-out.
+ *
+ * ## The demo session
+ *
+ * {@link SessionContextValue.signInAsDemo} exists because this build is frontend-first: the API does
+ * not answer yet, every screen is role-gated, and so without it there is nothing to review at all.
+ * It takes a {@link Role} rather than a `User` on purpose — the three fabricated identities live in
+ * `lib/demo/demo-session.ts` and nowhere else, which is CLAUDE.md §10 condition 1. A signature that
+ * accepted a `User` would invite a caller to invent one inline, in a file that has no demo banner.
  */
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
@@ -33,6 +41,8 @@ import type { ReactElement, ReactNode } from 'react';
 
 import { getSession, login as loginRequest, logout as logoutRequest } from './api';
 import { ApiError, clearToken, getToken, setToken } from './api-client';
+import { demoUser } from './demo/demo-session';
+import { IS_DEMO } from './env';
 import { ApiErrorCode } from '@/types/api';
 import type { Role, User } from '@/types/domain';
 
@@ -65,6 +75,18 @@ export interface SessionContextValue extends SessionState {
   readonly role: Role | null;
   /** Resolves with the signed-in user; rejects with an {@link ApiError} the caller must render. */
   readonly signIn: (username: string, password: string) => Promise<User>;
+  /**
+   * Establishes a **local** session for one of the fabricated demo accounts. Synchronous: there is
+   * no request to make, and nothing is written to `sessionStorage`.
+   *
+   * Storing no token is the entire safety argument. Every call `api-client.ts` makes still travels
+   * without an `Authorization` header, so the API refuses it exactly as it refuses an anonymous one.
+   * Picking `ADMIN` here therefore unlocks *navigation*, not access.
+   *
+   * Throws when `NEXT_PUBLIC_DATA_SOURCE !== 'demo'`, so an `api` build cannot reach it even if a
+   * button for it survives (§10 condition 5).
+   */
+  readonly signInAsDemo: (role: Role) => void;
   /** User-initiated. Tells the API, then clears locally — clearing happens even if the call fails. */
   readonly signOut: () => Promise<void>;
   /** For a caller that has just seen `UNAUTHENTICATED`: drop the session without a round trip. */
@@ -200,9 +222,35 @@ export function SessionProvider({ children }: SessionProviderProps): ReactElemen
     return result.user;
   }, []);
 
+  /**
+   * No `await`, no token, no request — see {@link SessionContextValue.signInAsDemo}.
+   *
+   * `expiresAt: null` is correct rather than lazy: the expiry watchdog above treats a missing value
+   * as "do not guess a lifetime", so a demo session simply lasts until the tab is closed or someone
+   * signs out. Inventing an expiry would sign a reviewer out mid-screen for no reason anyone could
+   * trace back to a server that was never asked.
+   */
+  const signInAsDemo = useCallback((role: Role): void => {
+    if (!IS_DEMO) {
+      throw new Error('Demo sign-in is only available while NEXT_PUBLIC_DATA_SOURCE=demo.');
+    }
+    // Defensive: if a real token is somehow present, a demo session must not borrow its authority.
+    clearToken();
+    if (mounted.current) {
+      setState({
+        status: 'authenticated',
+        user: demoUser(role),
+        expiresAt: null,
+        error: null,
+      });
+    }
+  }, []);
+
   const signOut = useCallback(async (): Promise<void> => {
     try {
-      await logoutRequest();
+      // "No token ⇒ no request", same rule as the bootstrap: revoking a credential we do not hold
+      // cannot succeed, and in demo mode it would put a doomed call in the console on every sign-out.
+      if (getToken() !== null) await logoutRequest();
     } catch {
       // Deliberately swallowed. The local session ends either way; a failed server-side revoke is
       // not a reason to leave someone apparently signed in.
@@ -224,11 +272,12 @@ export function SessionProvider({ children }: SessionProviderProps): ReactElemen
       ...state,
       role: state.user?.role ?? null,
       signIn,
+      signInAsDemo,
       signOut,
       invalidate,
       refresh,
     }),
-    [state, signIn, signOut, invalidate, refresh],
+    [state, signIn, signInAsDemo, signOut, invalidate, refresh],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

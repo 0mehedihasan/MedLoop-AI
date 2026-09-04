@@ -46,6 +46,11 @@
   --border-strong: 180 188 197; /* #B4BCC5 */
   --border-focus: 26 95 180; /* #1A5FB4 — 6.3:1; the focus ring is a token and is never removed */
 
+  /* ── Scrim ───────────────────────────────────────────────────────────────────────── */
+  /* Behind a modal. Not a text colour, so there is no ratio to state: it only has to make the
+     page beneath read as inert while leaving enough of it visible that the user keeps their place. */
+  --scrim: 22 25 29; /* #16191D, used at 55 % */
+
   /* ── Status — fg on #FFFFFF, plus a soft fill and its edge for pills ────────────── */
   /* `*-strong` is the hover/pressed fill for a *filled* control. Ratios on those two lines
      are for #FFFFFF text sitting on the fill, which is how they are actually used. */
@@ -152,6 +157,21 @@
   pre {
     font-family: var(--font-mono);
     font-size: 0.8125rem;
+  }
+
+  /*
+   * The scrim behind a modal. `<dialog>` + `showModal()` puts the dialog in the browser's top
+   * layer, which is what makes an overlay immune to the annotation canvas's own z-index scale; the
+   * price is that its backdrop is a pseudo-element and so cannot take a utility class.
+   *
+   * The fallback inside `var()` is load-bearing. `::backdrop` only began inheriting custom
+   * properties from its originating element in 2023 (Chrome 122, Safari 17.4, Firefox 123), and a
+   * `var()` that fails to resolve does *not* fall back to an earlier declaration of the same
+   * property — it computes to `unset`. Without the inline fallback, an older engine would open a
+   * modal over an undimmed page.
+   */
+  dialog::backdrop {
+    background-color: rgb(var(--scrim, 22 25 29) / 0.55);
   }
 }
 

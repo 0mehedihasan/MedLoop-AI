@@ -139,6 +139,12 @@ export type DateRangeQuery = {
 };
 
 export const DateRangePreset = {
+  /**
+   * No constraint. Present because §4.1's filter contract is "absent means no constraint, never a
+   * default that quietly hides rows" — which needs a *nameable* option in the UI, not the absence
+   * of one. It is the only preset that resolves to an empty query.
+   */
+  ALL_TIME: 'all_time',
   TODAY: 'today',
   YESTERDAY: 'yesterday',
   LAST_7D: 'last_7d',
