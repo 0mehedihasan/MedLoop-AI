@@ -102,6 +102,20 @@ export function toScreenBox(box: Box, viewport: Viewport, size: PixelSize): Scre
   };
 }
 
+/**
+ * Where the bitmap actually sits in the surface, in CSS pixels. The base image layer and the Grad-CAM
+ * layer must agree on this to the pixel — a heat-map half a pixel off its photograph is an attribution
+ * error, not a rendering quirk — so both read it from here.
+ */
+export function renderedRect(viewport: Viewport, size: PixelSize): ScreenBox {
+  return {
+    x: viewport.tx,
+    y: viewport.ty,
+    w: size.w * viewport.scale,
+    h: size.h * viewport.scale,
+  };
+}
+
 export function fitScale(frame: FrameSize, size: PixelSize): number {
   if (size.w <= 0 || size.h <= 0) return 1;
   return Math.min(frame.w / size.w, frame.h / size.h);

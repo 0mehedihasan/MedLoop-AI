@@ -53,6 +53,21 @@ export interface CanvasShape {
 
 export type Snapshot = readonly CanvasShape[];
 
+let keyCounter = 0;
+
+/**
+ * A client-only identity for a shape that has never been saved.
+ *
+ * A counter rather than `crypto.randomUUID`, because the key appears in `data-*` attributes and in
+ * test assertions and a readable one is worth more here than a globally unique one. It is only ever
+ * called from an event handler, never during render, so server and client markup cannot disagree.
+ * The prefix keeps it from ever colliding with the `a{id}` keys built from saved rows.
+ */
+export function newShapeKey(): string {
+  keyCounter += 1;
+  return `d${String(keyCounter)}`;
+}
+
 interface HistoryState {
   readonly past: readonly Snapshot[];
   readonly present: Snapshot;

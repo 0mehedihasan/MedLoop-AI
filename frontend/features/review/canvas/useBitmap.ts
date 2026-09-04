@@ -70,6 +70,17 @@ function measure(href: string): Promise<PixelSize> {
   });
 }
 
+/**
+ * Prose for a failure. Deliberately short of a stack trace or a raw `TypeError`: the annotator's next
+ * action is the same either way, and the detail belongs in the console.
+ */
+function describe(error: unknown): string {
+  if (error instanceof Error && error.message === 'decode') {
+    return 'The file was received but could not be decoded as an image.';
+  }
+  return 'The image could not be loaded. The local API may not be running.';
+}
+
 export function useBitmap(url: string | null): Bitmap {
   const [state, setState] = useState<BitmapState>(url === null ? IDLE : LOADING);
   const [nonce, setNonce] = useState(0);
@@ -95,3 +106,64 @@ export function useBitmap(url: string | null): Bitmap {
   const retry = useCallback((): void => {
     setNonce((current) => current + 1);
   }, []);
+
+  useEffect(() => {
+    if (url === null) {
+      install(IDLE);
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    let cancelled = false;
+    install(LOADING);
+
+    const load = async (): Promise<void> => {
+      let objectUrl: string | null = null;
+      try {
+        const token = getToken();
+        const response = await fetch(url, {
+          signal: controller.signal,
+          headers: token === null ? undefined : { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.status === 404) {
+          if (!cancelled) install({ status: 'missing', href: null, size: null, problem: null });
+          return;
+        }
+        if (!response.ok) {
+          if (!cancelled) {
+            install({
+              status: 'error',
+              href: null,
+              size: null,
+              problem: `The image could not be loaded (HTTP ${String(response.status)}).`,
+            });
+          }
+          return;
+        }
+
+        objectUrl = URL.createObjectURL(await response.blob());
+        const size = await measure(objectUrl);
+
+        // Revoke ours rather than installing it: a newer request has already taken over.
+        if (cancelled) {
+          URL.revokeObjectURL(objectUrl);
+          return;
+        }
+        install({ status: 'ready', href: objectUrl, size, problem: null });
+      } catch (error) {
+        if (objectUrl !== null) URL.revokeObjectURL(objectUrl);
+        if (cancelled || controller.signal.aborted) return;
+        install({ status: 'error', href: null, size: null, problem: describe(error) });
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [url, nonce, install]);
+
+  return { ...state, retry };
+}

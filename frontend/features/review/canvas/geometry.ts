@@ -29,7 +29,7 @@
  */
 
 import { AnnotationType } from '@/types/domain';
-import type { Box, Geometry, NormPoint } from '@/types/domain';
+import type { Box, Geometry, NormPoint, PixelSize } from '@/types/domain';
 
 /** Decimals kept on commit. Six is ~0.5 µm on a 5 cm lesion photograph: below any real precision. */
 export const COORD_PRECISION = 6;
@@ -345,6 +345,52 @@ export function boxHandlePoints(box: Box): readonly HandlePoint[] {
     { kind: 'sw', point: { x: box.x, y: bottom } },
     { kind: 'w', point: { x: box.x, y: midY } },
   ];
+}
+
+/**
+ * Drawn bounds of the radius grab point, as a fraction of the box width.
+ *
+ * A `ROUNDED_BOX` at `r = 0` would put its radius handle exactly on `nw`, and at `r = 0.5` exactly
+ * on `n`; either collision shadows a handle the annotator still needs. The drawn position therefore
+ * saturates inside these two bounds while the *reported* radius does not — dragging to the corner
+ * really does reach `r = 0`, the dot simply stops moving, which is how a slider thumb behaves at its
+ * minimum.
+ */
+export const RADIUS_HANDLE_FLOOR = 0.12;
+export const RADIUS_HANDLE_CEILING = 0.38;
+
+/**
+ * The shorter *screen* side of a box, as a fraction of its width.
+ *
+ * `ShapeNode` draws the corner arc with a pixel radius of `r · min(screenW, screenH)`, so this is
+ * the factor that converts `r` into an inset along the box's own width. `scale` cancels, which is
+ * why the image's natural size is enough here and the viewport is not needed.
+ */
+function shorterSideRatio(box: Box, size: PixelSize): number {
+  const width = box.w * size.w;
+  if (width <= 0) return 1;
+  return Math.min(1, (box.h * size.h) / width);
+}
+
+/** Where to draw the radius grab point: on the top edge, inset from `nw`. `null` for other types. */
+export function radiusHandlePoint(geometry: Geometry, size: PixelSize): NormPoint | null {
+  if (geometry.type !== AnnotationType.ROUNDED_BOX) return null;
+  const box = deriveBoundingBox(geometry);
+  const fraction = clamp(
+    geometry.r * shorterSideRatio(box, size),
+    RADIUS_HANDLE_FLOOR,
+    RADIUS_HANDLE_CEILING,
+  );
+  return { x: clamp01(box.x + fraction * box.w), y: box.y };
+}
+
+/** The radius a pointer on the top edge is asking for. Clamped by {@link clampRadius}, not by the
+ * drawn bounds above. */
+export function radiusFromPoint(geometry: Geometry, to: NormPoint, size: PixelSize): number {
+  const box = deriveBoundingBox(geometry);
+  const ratio = shorterSideRatio(box, size);
+  if (box.w <= 0 || ratio <= 0) return 0;
+  return clampRadius((to.x - box.x) / box.w / ratio);
 }
 
 /**

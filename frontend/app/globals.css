@@ -95,6 +95,15 @@
   --chart-s4: 116 169 216;
   --chart-s5: 61 127 191;
   --chart-s6: 26 95 180;
+
+  /* Annotation overlays. Aliases, not new channels, so the palette is still declared once —
+     and named separately from `--chart-c*` because a disease class may legitimately be drawn
+     in c5 or c6 on the same screen, and an outline that matches a class chip reads as a claim
+     about that class. Both are chosen against the subject: lesion photographs are pink, tan
+     and brown, so the outlines are the two cool/bright swatches that do not sit in skin. */
+  --annotation-human: var(--chart-c6); /* sky blue #56B4E9 */
+  --annotation-ai: var(--chart-c5); /* orange #E69F00 — always dashed as well as differently
+                                       coloured, so the two are still distinguishable without hue */
 }
 
 @layer base {

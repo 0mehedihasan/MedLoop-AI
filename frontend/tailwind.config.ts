@@ -88,6 +88,15 @@ const config: Config = {
           s5: 'rgb(var(--chart-s5) / <alpha-value>)',
           s6: 'rgb(var(--chart-s6) / <alpha-value>)',
         },
+        /**
+         * Annotation overlay strokes, consumed as `stroke-annotation-human`,
+         * `fill-annotation-human/[0.12]` and so on. Named apart from `chart.*` because a
+         * disease class can be drawn in the same swatch on the same screen.
+         */
+        annotation: {
+          human: 'rgb(var(--annotation-human) / <alpha-value>)',
+          ai: 'rgb(var(--annotation-ai) / <alpha-value>)',
+        },
       },
       fontFamily: {
         sans: ['var(--font-sans)'],
