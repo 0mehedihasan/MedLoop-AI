@@ -24,7 +24,7 @@
  * the whole reason this is a named function rather than a subtraction at each call site.
  */
 
-import { toDateInput } from './format';
+import { formatDate, toDateInput } from './format';
 import { DateRangePreset } from '@/types/api';
 import type { DateRangeQuery } from '@/types/api';
 
@@ -90,17 +90,46 @@ export function isCompleteRange(range: DateRange): boolean {
   return from <= to;
 }
 
+/**
+ * `true` only when **both** bounds are present and the end precedes the start.
+ *
+ * Separate from {@link isCompleteRange} because the two answer different questions: that one decides
+ * whether to fetch, this one decides whether to show the user a message. Conflating them would put
+ * an error under a field the user has not finished typing.
+ *
+ * String comparison is sound here and only here: `YYYY-MM-DD` is fixed-width and big-endian, so
+ * lexical order *is* chronological order. No parsing, no timezone.
+ */
+export function isInvertedRange(range: DateRange): boolean {
+  const { from, to } = range;
+  if (from === undefined || to === undefined || from === '' || to === '') return false;
+  return from > to;
+}
+
 /** `from`/`to` are omitted rather than sent empty, so an absent bound stays absent (§4.1). */
 export function toDateRangeQuery(range: DateRange): DateRangeQuery {
   if (!isCompleteRange(range) || range.preset === DateRangePreset.ALL_TIME) return {};
   return { from: range.from, to: range.to };
 }
 
-/** Human wording for a heading or an `aria-live` announcement — "01 Sep 2026 to 05 Sep 2026". */
-export function describeRange(range: DateRange, formatDay: (iso: string) => string): string {
+/**
+ * One calendar day as `05 Sep 2026`.
+ *
+ * The `T00:00:00` is load-bearing and is the mirror image of the `toDateInput` rule above.
+ * `new Date('2026-09-05')` is specified to parse as **UTC** midnight, while the same string *with* a
+ * time and no offset parses as **local** — so `formatDate('2026-09-05')` alone renders the previous
+ * day everywhere west of Greenwich. `formatDate` is right for what it documents (API timestamps,
+ * which always carry an offset); a bare date needs this one adjustment first.
+ */
+export function formatDay(iso: string): string {
+  return formatDate(`${iso}T00:00:00`);
+}
+
+/** Human wording for a heading or a live announcement — "01 Sep 2026 to 05 Sep 2026". */
+export function describeRange(range: DateRange): string {
   if (range.preset === DateRangePreset.ALL_TIME) return 'All time';
   const { from, to } = range;
-  if (from === undefined || to === undefined) return 'No range chosen';
+  if (from === undefined || to === undefined || from === '' || to === '') return 'No range chosen';
   if (from === to) return formatDay(from);
   return `${formatDay(from)} to ${formatDay(to)}`;
 }

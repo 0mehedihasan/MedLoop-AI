@@ -1,10 +1,10 @@
 /**
  * MedLoop AI — the root layout.
  *
- * Deliberately thin: `<html>`, `<body>`, the token stylesheet, and the session provider. The visible
- * frame lives in `app/(shell)/layout.tsx` instead, because `/login` must render *without* it — a login
- * screen that shows the navigation of an app you are not signed in to is offering links that cannot
- * work.
+ * Deliberately thin: `<html>`, `<body>`, the token stylesheet, and the two providers every route
+ * needs — session and toasts. The visible frame lives in `app/(shell)/layout.tsx` instead, because
+ * `/login` must render *without* it — a login screen that shows the navigation of an app you are not
+ * signed in to is offering links that cannot work.
  *
  * `metadata.title.template` puts the screen name first: a browser tab reading "Review Data · MedLoop
  * AI" is identifiable at tab-strip width, which "MedLoop AI · Review Data" is not.
@@ -18,6 +18,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactElement, ReactNode } from 'react';
 
 import './globals.css';
+import { ToastProvider } from '@/components/ui/Toast';
 import { SessionProvider } from '@/lib/session';
 
 export const metadata: Metadata = {
@@ -47,7 +48,14 @@ export default function RootLayout({ children }: RootLayoutProps): ReactElement 
   return (
     <html lang="en">
       <body>
-        <SessionProvider>{children}</SessionProvider>
+        {/*
+          `SessionProvider` outermost: a toast may want to know who is signed in, never the reverse.
+          `ToastProvider` sits above the route content rather than inside `(shell)` because `/login`
+          renders outside that group and a sign-in failure still has to be able to say so.
+        */}
+        <SessionProvider>
+          <ToastProvider>{children}</ToastProvider>
+        </SessionProvider>
       </body>
     </html>
   );

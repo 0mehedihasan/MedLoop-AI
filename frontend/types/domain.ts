@@ -288,7 +288,12 @@ export function deriveDataStatus(input: DataStatusInput): DataStatus {
  * pixel coordinate would silently rot the moment the image is displayed at another size.
  * ──────────────────────────────────────────────────────────────────────────────────────── */
 
-/** A normalised point. Both components are in `[0,1]`. */
+/**
+ * A normalised point. Both components are in `[0,1]`.
+ *
+ * This is the **in-memory** point shape — what the viewport conversion and the hit tests work with.
+ * It is deliberately *not* the wire shape of a polygon; see {@link PolygonGeometry}.
+ */
 export interface NormPoint {
   readonly x: number;
   readonly y: number;
@@ -312,10 +317,18 @@ export interface RoundedBoxGeometry extends Box {
   readonly r: number;
 }
 
-/** At least 3 points, implicitly closed. The first point is never repeated at the end. */
+/**
+ * At least 3 points, implicitly closed. The first point is never repeated at the end.
+ *
+ * Points are `[x, y]` **pairs, not `{x, y}` objects**, because that is the payload CLAUDE.md §4.3
+ * and `docs/annotation_workflow.md` both specify, and this type is posted to the API verbatim — a
+ * nicer-looking client type would simply be the wrong request body. The canvas converts to
+ * {@link NormPoint} where objects read better and converts back on commit; that boundary is one
+ * function in `geometry.ts`, which is cheaper than a whole-payload mapping layer.
+ */
 export interface PolygonGeometry {
   readonly type: typeof AnnotationType.POLYGON;
-  readonly points: readonly NormPoint[];
+  readonly points: readonly (readonly [number, number])[];
 }
 
 export type Geometry = BoundingBoxGeometry | RoundedBoxGeometry | PolygonGeometry;
