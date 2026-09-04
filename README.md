@@ -21,9 +21,10 @@ Upload → Assign → Train → Predict → Explain → Human Review → Correct
 
 MedLoop AI uses **PAD-UFES-20** as the dataset for the initial research prototype.
 
-> **PAD-UFES-20 is third-party research data.** It was created, collected and labelled by its
-> original authors at the Federal University of Espírito Santo (UFES), Brazil. MedLoop AI does not
-> own it, did not modify it, and does not place it under this project's software licence.
+> **PAD-UFES-20 is third-party research data**, licensed **CC BY 4.0** and redistributed here
+> unmodified. It was created, collected and labelled by its original authors at the Federal
+> University of Espírito Santo (UFES), Brazil. MedLoop AI does not own it, did not modify it, and
+> does not place it under this project's software licence.
 > See **[DATASET_LICENSE.md](./DATASET_LICENSE.md)** before using or redistributing it.
 
 ### Local layout
@@ -125,29 +126,45 @@ store 3.36 GiB of raw binaries in history instead of pointers.
 
 ### Attribution
 
-The dataset accompanies the data article *"PAD-UFES-20: a skin lesion dataset composed of patient
-data and clinical images collected from smartphones"* by Andre G. C. Pacheco, Gustavo R. Lima,
-Amanda S. Salomão, Breno A. Krohling, Igor P. Biral, Gabriel G. de Angelo, Fábio C. R. Alves Jr.,
-José G. M. Esgario, Alana C. Simora, Pedro B. C. Castro, Felipe B. Rodrigues *et al.*,
-*Data in Brief*, 2020.
+**PAD-UFES-20 is licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).** Redistribution
+is permitted; attribution is mandatory and must travel with any copy.
+
+| Field | Value |
+| --- | --- |
+| Dataset | PAD-UFES-20, version 1, published 7 July 2020 |
+| DOI | [10.17632/zr7vgbcyr2.1](https://doi.org/10.17632/zr7vgbcyr2.1) |
+| Licence | CC BY 4.0 |
+| Institution | Universidade Federal do Espírito Santo (UFES), Brazil |
+| Programme | Dermatological and Surgical Assistance Program (PAD) |
+| Ethics | University committee nº 500002/478 · Plataforma Brasil nº 4.007.097 |
+
+Contributors, in record order: Andre G. C. Pacheco, Gustavo R. Lima, Amanda S. Salomão,
+Breno Krohling, Igor P. Biral, Gabriel G. de Angelo, Fábio C. R. Alves Jr, José G. M. Esgario,
+Alana C. Simora, Pedro B. C. Castro, Felipe B. Rodrigues, Patricia H. L. Frasson,
+Renato A. Krohling, Helder Knidel, Maria C. S. Santos, Rachel B. Espírito Santo,
+Telma L. S. G. Macedo, Tania R. P. Canuto, Luíz F. S. de Barros.
 
 | Resource | Location |
 | --- | --- |
-| Data repository record | <https://data.mendeley.com/datasets/zr7vgbcyr2/1> |
+| Dataset record (canonical) | <https://data.mendeley.com/datasets/zr7vgbcyr2/1> |
+| Dataset DOI | <https://doi.org/10.17632/zr7vgbcyr2.1> |
+| Data article | *Data in Brief*, 2020 — same title and authors |
+| Related article (per the record) | <https://doi.org/10.1016/j.compbiomed.2019.103545> |
 | Preprint | <https://arxiv.org/abs/2007.00478> |
 | Authors' project code | <https://github.com/labcin-ufes/PAD-UFES-20> |
 
-If you use the dataset in your own work, **cite the data article — not this repository**. Users are
-responsible for complying with the original dataset terms, which are published on the data
-repository record above. `DATASET_LICENSE.md` records which licence fields still need to be
-transcribed from that record.
+- Cite the **dataset DOI and the data article** — not this repository.
+- You are responsible for complying with the original terms. Read the licence and the record
+  yourself; [`DATASET_LICENSE.md`](./DATASET_LICENSE.md) is a convenience, not a substitute.
+- The only change made here is a directory rename (`Dataset ` → `Dataset`, removing a stray trailing
+  space). Image bytes, filenames, `metadata.csv` and labels are byte-for-byte as received.
 
 ### Two licences, one repository
 
 | Path | Licence | File |
 | --- | --- | --- |
 | everything except `Dataset/` | Apache-2.0 | [`LICENSE`](./LICENSE) |
-| `Dataset/` | third-party, per the upstream record | [`DATASET_LICENSE.md`](./DATASET_LICENSE.md) |
+| `Dataset/` | CC BY 4.0, © the dataset authors | [`DATASET_LICENSE.md`](./DATASET_LICENSE.md) |
 
 The project licence does not extend to the dataset, and the dataset licence does not extend to the
 code. Neither may be applied to the other's files.
