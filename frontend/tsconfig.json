@@ -1,0 +1,60 @@
+{
+  // MedLoop AI frontend — TypeScript configuration.
+  //
+  // `strict` is on and never relaxed per CLAUDE.md §11.2 ("No `any`. No non-null `!`
+  // assertion to silence a real nullable").
+  //
+  // Deliberately NOT enabled: `noUncheckedIndexedAccess`. It is the correct long-term
+  // setting, but it turns every `points[i]` into `T | undefined`, and the honest ways to
+  // satisfy it are a guard clause or `!` — and `!` is banned. Adopting it is a focused
+  // refactor, not a flag flip; it is recorded here as an upgrade seam rather than left
+  // undiscussed.
+  //
+  // Unused locals/parameters are enforced by ESLint (`@typescript-eslint/no-unused-vars`
+  // with `argsIgnorePattern: "^_"`), not by tsc, so there is exactly one reporter for
+  // that class of problem.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "ES2022"
+    ],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "allowJs": false,
+    "noEmit": true,
+    "incremental": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next"
+  ]
+}

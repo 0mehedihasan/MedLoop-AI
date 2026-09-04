@@ -1,0 +1,204 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * MedLoop AI — design tokens.
+ *
+ * This block is the ONLY place a colour value is written. `tailwind.config.ts` maps every
+ * theme name onto these variables, so a component never sees a hex literal. Channels are
+ * space-separated RGB so Tailwind's alpha modifiers keep working.
+ *
+ * Contrast was computed, not eyeballed. The ratio in each comment is against the surface
+ * that token is intended to sit on; every text and status colour clears the 4.5:1 floor in
+ * CLAUDE.md §11.2. If you change a value, recompute the ratio in the same edit.
+ *
+ * There is no dark theme. Medical review benefits from a dark *surround*, which is what
+ * `--surface-canvas` provides in the viewer, but inverting the whole chrome would double
+ * the token surface and halve the number of contrast pairs anyone actually verifies.
+ */
+:root {
+  color-scheme: light;
+
+  /* ── Type ────────────────────────────────────────────────────────────────────────── */
+  /* System stacks only. A web font would be an outbound request at build or run time. */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas,
+    'Liberation Mono', monospace;
+
+  /* ── Surface — flat fills only ───────────────────────────────────────────────────── */
+  --surface-page: 246 247 249; /* #F6F7F9 */
+  --surface-panel: 255 255 255; /* #FFFFFF */
+  --surface-raised: 255 255 255; /* #FFFFFF — differs from panel by border + shadow, not fill */
+  --surface-inset: 238 240 243; /* #EEF0F3 */
+  --surface-canvas: 28 32 36; /* #1C2024 — image surround */
+
+  /* ── Text — ratios against #FFFFFF ───────────────────────────────────────────────── */
+  --text-primary: 22 25 29; /* #16191D — 16.9:1 */
+  --text-secondary: 74 81 89; /* #4A5159 —  7.9:1 */
+  --text-muted: 101 109 118; /* #656D76 —  5.2:1 */
+  --text-inverse: 255 255 255; /* #FFFFFF — for use on status/canvas fills only */
+
+  /* ── Border ──────────────────────────────────────────────────────────────────────── */
+  --border-subtle: 231 234 238; /* #E7EAEE */
+  --border-default: 214 219 225; /* #D6DBE1 */
+  --border-strong: 180 188 197; /* #B4BCC5 */
+  --border-focus: 26 95 180; /* #1A5FB4 — 6.3:1; the focus ring is a token and is never removed */
+
+  /* ── Status — fg on #FFFFFF, plus a soft fill and its edge for pills ────────────── */
+  /* `*-strong` is the hover/pressed fill for a *filled* control. Ratios on those two lines
+     are for #FFFFFF text sitting on the fill, which is how they are actually used. */
+  --status-ok: 27 127 75; /* #1B7F4B — 5.0:1 */
+  --status-ok-soft: 232 245 238;
+  --status-ok-edge: 169 216 191;
+  --status-warn: 138 90 0; /* #8A5A00 — 5.9:1 */
+  --status-warn-soft: 251 242 224;
+  --status-warn-edge: 227 200 138;
+  --status-danger: 179 38 30; /* #B3261E — 6.6:1; white on it 6.5:1 */
+  --status-danger-soft: 252 236 234;
+  --status-danger-edge: 237 179 174;
+  --status-danger-strong: 150 31 25; /* #961F19 — white on it 8.1:1 */
+  --status-info: 26 95 180; /* #1A5FB4 — 6.3:1; white on it 6.3:1 */
+  --status-info-soft: 234 241 251;
+  --status-info-edge: 174 202 236;
+  --status-info-strong: 21 78 148; /* #154E94 — white on it 7.9:1 */
+  --status-neutral: 101 109 118; /* #656D76 — 5.2:1 */
+  --status-neutral-soft: 241 243 245;
+  --status-neutral-edge: 214 219 225;
+  --status-unknown: 110 106 134; /* #6E6A86 — 5.1:1 */
+  --status-unknown-soft: 241 240 246;
+  --status-unknown-edge: 199 195 216;
+
+  /* ── Charts ──────────────────────────────────────────────────────────────────────── */
+  /* Categorical: Okabe–Ito, which stays separable under deuteranopia and protanopia.
+     Yellow (#F0E442) is omitted because it fails on a white surface. c7 is the
+     "other / unspecified" slot and is never used for a named disease class. */
+  --chart-c1: 0 114 178; /* #0072B2 blue */
+  --chart-c2: 213 94 0; /* #D55E00 vermillion */
+  --chart-c3: 0 158 115; /* #009E73 bluish green */
+  --chart-c4: 204 121 167; /* #CC79A7 reddish purple */
+  --chart-c5: 230 159 0; /* #E69F00 orange */
+  --chart-c6: 86 180 233; /* #56B4E9 sky blue */
+  --chart-c7: 76 76 76; /* #4C4C4C grey */
+
+  /* Sequential: one hue, six steps. Used for confusion-matrix cell intensity and nothing
+     that could be mistaken for a model-produced heat-map. */
+  --chart-s1: 239 245 251;
+  --chart-s2: 211 228 245;
+  --chart-s3: 168 201 234;
+  --chart-s4: 116 169 216;
+  --chart-s5: 61 127 191;
+  --chart-s6: 26 95 180;
+}
+
+@layer base {
+  * {
+    border-color: rgb(var(--border-subtle));
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: rgb(var(--surface-page));
+    color: rgb(var(--text-primary));
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Figures align in columns; §11.2 requires tabular numerals for numbers. */
+  th,
+  td,
+  output,
+  time,
+  data {
+    font-variant-numeric: tabular-nums;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: rgb(var(--text-primary));
+  }
+
+  /* One focus treatment for the whole app. Removing it is a defect, not a style choice. */
+  :focus-visible {
+    outline: 2px solid rgb(var(--border-focus));
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  /* Pointer users do not get an outline from a mouse press, but keyboard users always do. */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  ::selection {
+    background-color: rgb(var(--status-info-soft));
+    color: rgb(var(--text-primary));
+  }
+
+  /* Never let a long identifier (patient_id, oid, path) blow out a table cell. */
+  code,
+  kbd,
+  samp,
+  pre {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+  }
+}
+
+@layer components {
+  /* The image surround. Kept here rather than in the canvas component because the same
+     backdrop is used by the review workspace, the image detail drawer and the compare view. */
+  .medloop-canvas-frame {
+    background-color: rgb(var(--surface-canvas));
+    background-image: linear-gradient(
+        45deg,
+        rgb(255 255 255 / 0.03) 25%,
+        transparent 25%,
+        transparent 75%,
+        rgb(255 255 255 / 0.03) 75%
+      ),
+      linear-gradient(
+        45deg,
+        rgb(255 255 255 / 0.03) 25%,
+        transparent 25%,
+        transparent 75%,
+        rgb(255 255 255 / 0.03) 75%
+      );
+    background-position:
+      0 0,
+      8px 8px;
+    background-size: 16px 16px;
+  }
+}
+
+/*
+ * Motion. 120–200 ms, opacity and small transforms only (§11.2). `prefers-reduced-motion`
+ * disables all of it — this is on the accessibility checklist in medloop-frontend.md, so it
+ * is not optional and it is not per-component.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+}
