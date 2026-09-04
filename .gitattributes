@@ -1,0 +1,67 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# MedLoop AI — Git attributes
+#
+# Two jobs:
+#   1. Route the third-party PAD-UFES-20 clinical images through Git LFS.
+#   2. Keep everything else — including this project's own artwork — in
+#      normal Git, so it does not consume the account's LFS storage quota.
+#
+# ORDER MATTERS. Later rules win, so the LFS rule is deliberately the last
+# rule that touches PNG files.
+#
+# Git LFS must be installed and initialised BEFORE the first `git add` of any
+# path matched below. If the clean filter is not active, Git silently stores
+# the raw bytes instead of a pointer:
+#
+#     git lfs install
+#     git check-attr filter -- Dataset/images/imgs_part_1/PAT_8_15_820.png
+#     # expected output: "... filter: lfs"
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── 1. Repo-wide binary handling ─────────────────────────────────────────────
+# Never newline-convert these, never attempt a text diff.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.pdf   binary
+*.pt    binary
+*.pth   binary
+*.onnx  binary
+*.safetensors binary
+
+# ── 2. Text files: normalise to LF in the repository ─────────────────────────
+*.md    text eol=lf
+*.py    text eol=lf
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.js    text eol=lf
+*.jsx   text eol=lf
+*.json  text eol=lf
+*.sql   text eol=lf
+*.css   text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.sh    text eol=lf
+*.csv   text eol=lf
+
+# ── 3. Git LFS — dataset images only ─────────────────────────────────────────
+# PNG is the only image format present in Dataset/ (2,298 files, verified).
+# Adding a new image format to the dataset requires adding a line here, or it
+# will be committed as a raw blob into normal Git history.
+Dataset/**/*.png  filter=lfs diff=lfs merge=lfs -text
+
+# ── 4. Deliberately NOT in Git LFS ───────────────────────────────────────────
+# Dataset/metadata.csv is 316 KB of plain text. It stays in normal Git so that
+# any change to a label or a clinical field is visible in a reviewable diff.
+Dataset/metadata.csv  text eol=lf
+
+# Project artwork at the repository root (medloopai_logo.png,
+# favicon_medloop_ai.png — ~0.9 MB each) is matched by rule 1 only, not by
+# rule 3, so it stays in normal Git.
+
+# ── 5. Linguist hints — keep the dataset out of the language statistics ──────
+Dataset/**    linguist-vendored
+Dataset/**    linguist-generated=false
