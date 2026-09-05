@@ -311,7 +311,13 @@ export interface SubmitHitlOutcome {
 
 export interface SubmitResult {
   readonly review_session_id: number;
-  readonly agreement: boolean;
+  /**
+   * `null` when there was no prediction to agree or disagree with, matching `ReviewSession.agreement`
+   * in `types/domain.ts`. With no trained model on this machine that is the *only* value this field can
+   * currently take — reporting `false` would state that the human contradicted the model, which is a
+   * fabricated comparison (§2.3, §6.3).
+   */
+  readonly agreement: boolean | null;
   readonly hitl: SubmitHitlOutcome;
   /** The next queue item, so the UI advances without a second round trip. */
   readonly next: ReviewItem | null;

@@ -34,6 +34,17 @@ const isDev = process.env.NODE_ENV !== 'production';
 const api = apiOrigin();
 
 /**
+ * `data:` is added to `connect-src` **only in demo mode**, and only because of it.
+ *
+ * The §10 review fixtures are procedurally-drawn SVG `data:` URLs, and `useBitmap` reaches every image
+ * with `fetch` so the bearer token can ride in a header — which puts even a `data:` URL under
+ * `connect-src`. Without this the demo canvas fails with a CSP refusal that looks exactly like a dead
+ * API. A `data:` URL is inert local bytes and is not a network destination, so §2.1 is untouched; and
+ * `NEXT_PUBLIC_DATA_SOURCE=api` removes the allowance along with the fixtures themselves.
+ */
+const isDemo = (process.env.NEXT_PUBLIC_DATA_SOURCE ?? 'demo') === 'demo';
+
+/**
  * `'unsafe-inline'` on script-src is required because Next injects inline bootstrap and
  * flight-data scripts and this app does not run a nonce-emitting middleware. `'unsafe-eval'`
  * and the websocket origins are dev-only (react-refresh / HMR) and are absent in production.
@@ -44,7 +55,7 @@ const csp = [
   `style-src 'self' 'unsafe-inline'`,
   `img-src 'self' blob: data: ${api}`,
   `font-src 'self' data:`,
-  `connect-src 'self' ${api}${isDev ? ' ws://localhost:3000 ws://127.0.0.1:3000' : ''}`,
+  `connect-src 'self' ${api}${isDemo ? ' data:' : ''}${isDev ? ' ws://localhost:3000 ws://127.0.0.1:3000' : ''}`,
   `media-src 'self' ${api}`,
   `worker-src 'self' blob:`,
   `manifest-src 'self'`,
