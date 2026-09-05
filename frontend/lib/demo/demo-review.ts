@@ -227,9 +227,13 @@ const ITEMS: readonly ReviewItem[] = [
 ];
 
 /**
- * `isDemo: true` is the §10 condition 3 marker, and it is read at runtime rather than being decoration:
- * the workspace asserts it before rendering the badge, so a fixture that lost the flag would show up
- * unmarked in review rather than silently.
+ * `isDemo: true` is the §10 condition 3 marker. It is a type-level `true`, so the compiler is what
+ * keeps it on rather than a runtime check: a fixture that dropped the flag stops satisfying
+ * `DemoReviewQueue` and the build fails before anything unmarked could reach a reviewer.
+ *
+ * `useReviewQueue` is this module's only consumer, and `NEXT_PUBLIC_DATA_SOURCE` is what selects the
+ * demo path there. The badge the review screen renders follows that same flag, so the fixture items
+ * and the mark on them cannot come apart.
  *
  * There is deliberately no `hitl` block here. Submitting in demo mode counts **nothing** — no row is
  * written, no counter moves — so the hook reports `hitl: null` and the UI says the count is not being
