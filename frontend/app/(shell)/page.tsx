@@ -21,14 +21,25 @@
  * (§10 condition 5). In API mode the fixtures are unreachable — the import survives, but the branch
  * that reads it cannot be taken.
  *
- * ## Review activity has no chart yet
+ * ## Review activity is a chart whose transcript *is* the table
  *
- * The series renders as the table transcript that `components/charts/` is required to carry anyway.
- * When `LineSeriesChart` lands it goes *above* this table, not instead of it.
+ * This panel used to hand-pivot `review_activity` into a `<table>`, under a note saying a chart would
+ * one day go above it. `LineSeriesChart` now draws it — and `ChartFrame` obliges every chart to carry
+ * the same data as a real `<table>` in the DOM, so the hand-built pivot was deleted rather than left
+ * underneath the line. Two identical transcripts are not a stronger guarantee than one, and the
+ * duplicate would have been the copy that drifted.
+ *
+ * What changed is that the numbers are now collapsed behind a disclosure instead of always open. That
+ * is the right trade here: a dashboard's job is the shape of the trend, and the exact figure is one
+ * click away rather than absent.
+ *
+ * The empty branch stays in this file instead of being delegated to the chart's own `emptyTitle`,
+ * because it offers a link into the review queue and `LineSeriesChart` has no action slot.
  */
 
 import type { ReactElement } from 'react';
 
+import { LineSeriesChart } from '@/components/charts/LineSeriesChart';
 import { PageHeader } from '@/components/shell/PageHeader';
 import { ServiceStateDot, StatusPill } from '@/components/ui/Badge';
 import { LinkButton } from '@/components/ui/Button';
@@ -45,7 +56,7 @@ import { IS_DEMO } from '@/lib/env';
 import { formatCount, formatDateTime, formatPercent, formatRelative } from '@/lib/format';
 import { ROUTES } from '@/lib/navigation';
 import { useApiQuery } from '@/lib/use-query';
-import type { ActivityEntry, HitlStatus, SeriesPoint } from '@/types/domain';
+import type { ActivityEntry, HitlStatus } from '@/types/domain';
 
 /* ────────────────────────────────────────────────────────────────────────────────────────
  * KPI row
@@ -204,25 +215,14 @@ function HitlPanel({ hitl, demo }: { readonly hitl: HitlStatus; readonly demo: b
  * Review activity
  * ──────────────────────────────────────────────────────────────────────────────────────── */
 
-interface ActivityRow {
-  readonly t: string;
-  readonly values: readonly (number | undefined)[];
-}
-
 /**
- * Pivots the series into one row per date. A date present in one series and missing from another
- * yields `undefined` for that cell, which renders as a dash rather than a `0` — the same distinction
- * the rest of the app makes between "measured zero" and "not measured".
+ * Daily review outcomes as a line, with the exact counts in the chart's own transcript.
+ *
+ * Emptiness is tested on the *points*, not on the array: the statistics endpoint answers with the
+ * series it knows about and no points inside them when the window is quiet, which is a normal reply
+ * rather than a failure. `LineSeriesChart` would render its own empty state in that case; this one is
+ * used instead only because it can carry the link into the queue.
  */
-function pivot(series: readonly { readonly points: readonly SeriesPoint[] }[]): readonly ActivityRow[] {
-  const dates = new Set<string>();
-  for (const one of series) {
-    for (const point of one.points) dates.add(point.t);
-  }
-  const byDate = series.map((one) => new Map(one.points.map((point) => [point.t, point.v])));
-  return [...dates].sort().map((t) => ({ t, values: byDate.map((lookup) => lookup.get(t)) }));
-}
-
 function ReviewActivityPanel({
   stats,
   demo,
@@ -231,48 +231,26 @@ function ReviewActivityPanel({
   readonly demo: boolean;
 }): ReactElement {
   const series = stats.review_activity;
-  const rows = pivot(series);
-
-  const columns: readonly Column<ActivityRow>[] = [
-    { id: 't', header: 'Date', cell: (row) => row.t, rowHeader: true, width: '9rem' },
-    ...series.map((one, index) => ({
-      id: one.key,
-      header: one.label,
-      numeric: true,
-      cell: (row: ActivityRow): ReactElement | string => {
-        const value = row.values[index];
-        return value === undefined ? <span className="text-content-muted">–</span> : formatCount(value);
-      },
-    })),
-  ];
+  const dated = series.some((one) => one.points.length > 0);
+  const window =
+    stats.from === null || stats.to === null ? '' : `, ${stats.from} to ${stats.to}`;
 
   return (
     <Panel
       id="review-activity"
       title="Review activity"
-      description={
-        stats.from === null || stats.to === null
-          ? 'Daily review outcomes.'
-          : `Daily review outcomes, ${stats.from} to ${stats.to}.`
-      }
+      description={`Daily review outcomes${window}. A day with no reviews is absent rather than zero, so the line breaks there and the transcript prints a dash.`}
       meta={demo ? <DemoBadge /> : undefined}
-      bodyPadding="none"
     >
-      <Table
-        caption="Review outcomes per day"
-        captionHidden
-        columns={columns}
-        rows={rows}
-        rowKey={(row) => row.t}
-        density="compact"
-        emptyState={
-          <EmptyState
-            title="No review activity in this window"
-            description="Nothing has been validated or skipped in the reported period. The counts appear here as soon as the first review is submitted."
-            action={<LinkButton href={ROUTES.data.review} size="sm">Open the review queue</LinkButton>}
-          />
-        }
-      />
+      {dated ? (
+        <LineSeriesChart ariaLabel="Review outcomes per day" series={series} />
+      ) : (
+        <EmptyState
+          title="No review activity in this window"
+          description="Nothing has been validated or skipped in the reported period. The counts appear here as soon as the first review is submitted."
+          action={<LinkButton href={ROUTES.data.review} size="sm">Open the review queue</LinkButton>}
+        />
+      )}
     </Panel>
   );
 }
