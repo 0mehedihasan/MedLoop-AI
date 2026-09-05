@@ -56,7 +56,13 @@ const KPIS: DashboardKpis = {
   reviewed: 471,
   validated: 412,
   skipped: 59,
-  pending_review: 1827,
+  /**
+   * `UNUSED` **and** not yet reviewed — not "everything unreviewed". Most of the 2298 sit in `TRAIN`,
+   * `VALIDATION` or the locked `TEST` split and are never queueable, so this is the small remainder:
+   * 638 in the `UNUSED` pool, less 412 validated, 59 skipped and 4 claimed. The same partition is
+   * spelled out in `demo-statistics.ts`, and the two fixtures are meant to agree.
+   */
+  pending_review: 163,
   annotations: 412,
   // `agreement_rate` intentionally omitted. See the header block.
 };
@@ -65,8 +71,12 @@ const KPIS: DashboardKpis = {
  * The threshold here is the documented default (1000) carried as *data*, which is what §2.6
  * requires: the number is never a condition in code. `progress`, `remaining` and `threshold_met` are
  * supplied rather than derived, mirroring the real payload — the client must not compute them.
+ *
+ * Exported because `demo-training.ts` needs the *same* counter: the dashboard card and Training
+ * Management must not disagree about how many samples are waiting, and the `1000` default should
+ * exist as a literal in exactly one frontend file.
  */
-const HITL: HitlStatus = {
+export const DEMO_HITL_STATUS: HitlStatus = {
   validated_since_last_training: 412,
   threshold: 1000,
   remaining: 588,
@@ -186,7 +196,7 @@ export const DEMO_DASHBOARD: DemoDashboard = {
     from: FROM,
     to: TO,
     kpis: KPIS,
-    hitl: HITL,
+    hitl: DEMO_HITL_STATUS,
     active_model: null,
     candidate_model: null,
     latest_evaluation: null,

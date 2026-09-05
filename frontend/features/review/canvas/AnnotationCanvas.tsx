@@ -117,6 +117,13 @@ const PAN_STEP_MULTIPLIER = 5;
 /** The in-progress shape is dashed in the human colour: same annotation, not yet a record. */
 const DRAFT_DASH = '4 3';
 
+/**
+ * Lighter than a committed shape's 12 %, so a rubber band dragged across the lesion never obscures more
+ * of it than the finished annotation would. An attribute, not a `/8` class — `ShapeNode`'s header has
+ * the full reason, and the short version is that the class does not exist and SVG fills black instead.
+ */
+const DRAFT_FILL_OPACITY = 0.08;
+
 /** The select tool draws nothing, so it has no `DrawingTool.hint` of its own to render. */
 const SELECT_HINT =
   'Drag a shape to move it, or a handle to resize. Space-drag or middle-drag pans; the wheel zooms.';
@@ -843,7 +850,9 @@ export function AnnotationCanvas({
             geometry={preview}
             viewport={view}
             size={natural}
-            className="stroke-annotation-human fill-annotation-human/8"
+            className="stroke-annotation-human fill-annotation-human"
+            fillOpacity={DRAFT_FILL_OPACITY}
+            strokeWidth={1.5}
             dash={DRAFT_DASH}
           />
         )}

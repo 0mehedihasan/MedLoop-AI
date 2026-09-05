@@ -89,14 +89,33 @@ const config: Config = {
           s6: 'rgb(var(--chart-s6) / <alpha-value>)',
         },
         /**
-         * Annotation overlay strokes, consumed as `stroke-annotation-human`,
-         * `fill-annotation-human/[0.12]` and so on. Named apart from `chart.*` because a
-         * disease class can be drawn in the same swatch on the same screen.
+         * Annotation overlay strokes, consumed as `stroke-annotation-human` and
+         * `fill-annotation-human`. Named apart from `chart.*` because a disease class can be
+         * drawn in the same swatch on the same screen.
+         *
+         * The canvas sets its fill alpha with the SVG `fill-opacity` attribute, not with an
+         * alpha modifier — see `overlays/ShapeNode.tsx`. An `<svg>` shape whose `fill` class
+         * failed to compile is opaque black, and on this screen that means a black rectangle
+         * over the lesion under review.
          */
         annotation: {
           human: 'rgb(var(--annotation-human) / <alpha-value>)',
           ai: 'rgb(var(--annotation-ai) / <alpha-value>)',
         },
+      },
+      /**
+       * The sub-10 % and 12 % steps Tailwind's default scale omits.
+       *
+       * The default scale is `0, 5, 10, 15, … 100`, and an alpha modifier outside it generates
+       * **nothing at all** — silently, with no build warning. `fill-annotation-human/12` therefore
+       * type-checked, linted, read exactly like a 12 % fill, and shipped an opaque black annotation
+       * that hid the lesion it was drawn around. These three steps exist so the values the design
+       * language actually uses are real classes rather than plausible-looking ones.
+       */
+      opacity: {
+        '8': '0.08',
+        '12': '0.12',
+        '18': '0.18',
       },
       fontFamily: {
         sans: ['var(--font-sans)'],

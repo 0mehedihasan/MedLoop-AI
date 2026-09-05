@@ -23,6 +23,16 @@
  *
  * `r` is normalised against `min(w, h)` of the *box* (§4.3), so the pixel radius is
  * `r · min(screenW, screenH)`. Storing a pixel radius would rot the moment the viewer zoomed.
+ *
+ * ## The fill opacity is an SVG attribute, never a Tailwind alpha modifier
+ *
+ * `fill-annotation-human/12` looks like it asks for a 12 % fill. It does not: Tailwind's opacity scale
+ * has no `12` step, so the class is never generated, the `<rect>` inherits SVG's initial `fill: black`
+ * — and an opaque black rectangle lands on top of the lesion the annotator is judging. That shipped,
+ * and it is the worst possible failure mode for this file, so the alpha is now a real presentation
+ * attribute that no build step can drop. {@link ShapeNodeProps.fillOpacity} defaults to `0`, which
+ * makes a forgotten fill *invisible* rather than *opaque*: if this is ever wrong again, it must fail
+ * towards showing the photograph.
  */
 
 import type { ReactElement } from 'react';
@@ -40,6 +50,12 @@ export interface ShapeNodeProps {
   /** Tailwind `stroke-*` / `fill-*` classes. Raw colour literals are a defect (§11.2). */
   readonly className: string;
   readonly strokeWidth?: number;
+  /**
+   * Fill alpha, `0 … 1`. See the header: this is an attribute rather than a `/12` class because the
+   * class silently does not exist and the SVG fallback is opaque black. `0` — no fill — is the
+   * default, because the annotator has to see the skin under the shape.
+   */
+  readonly fillOpacity?: number;
   /** `stroke-dasharray`, in CSS pixels. The AI box is dashed; a human shape never is. */
   readonly dash?: string;
 }
@@ -50,11 +66,13 @@ export function ShapeNode({
   size,
   className,
   strokeWidth = 1,
+  fillOpacity = 0,
   dash,
 }: ShapeNodeProps): ReactElement | null {
   const shared = {
     className,
     strokeWidth,
+    fillOpacity,
     strokeDasharray: dash,
     // See the header: the model is the hit-test, not the DOM.
     pointerEvents: 'none' as const,

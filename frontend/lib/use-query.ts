@@ -166,3 +166,72 @@ export function useApiQuery<T>(
     refetch,
   };
 }
+
+/* ────────────────────────────────────────────────────────────────────────────────────────
+ * Writes
+ * ──────────────────────────────────────────────────────────────────────────────────────── */
+
+export interface UseApiActionResult<Args extends readonly unknown[], T> {
+  /** Resolves with the response, or `null` if the call failed — the reason is then in `error`. */
+  readonly run: (...args: Args) => Promise<T | null>;
+  /** One call at a time. A second `run` while this is `true` is dropped, not queued. */
+  readonly busy: boolean;
+  readonly error: ApiError | null;
+  /** Clears `error` — call it when the user edits the form the error was about. */
+  readonly reset: () => void;
+}
+
+/**
+ * The write-side counterpart to {@link useApiQuery}: busy, error, and nothing else.
+ *
+ * It deliberately does **not** hold the response. A mutation's result belongs to whatever the screen
+ * does next — refetch a list, advance a queue, close a dialog — and caching it here would invite two
+ * copies of the same row on screen, one stale.
+ *
+ * `run` resolves with `null` instead of throwing, so a click handler is a plain `await` with an `if`
+ * rather than a `try`. Aborts are impossible by design: a `POST` that may have already committed must
+ * not be cancelled on unmount, because the client would then not know whether it happened.
+ */
+export function useApiAction<Args extends readonly unknown[], T>(
+  action: (...args: Args) => Promise<T>,
+): UseApiActionResult<Args, T> {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<ApiError | null>(null);
+
+  const actionRef = useRef(action);
+  actionRef.current = action;
+
+  const mounted = useRef(true);
+  /** State updates lag a render; this does not. Without it a double-click fires two writes. */
+  const inFlight = useRef(false);
+
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  const run = useCallback(async (...args: Args): Promise<T | null> => {
+    if (inFlight.current) return null;
+    inFlight.current = true;
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await actionRef.current(...args);
+      return result;
+    } catch (cause) {
+      if (mounted.current) setError(toApiError(cause));
+      return null;
+    } finally {
+      inFlight.current = false;
+      if (mounted.current) setBusy(false);
+    }
+  }, []);
+
+  const reset = useCallback((): void => {
+    setError(null);
+  }, []);
+
+  return { run, busy, error, reset };
+}

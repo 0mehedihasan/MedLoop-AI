@@ -12,9 +12,14 @@
  *
  * ## `r` is a fraction of the shorter side, not of the image
  *
- * `0.15` of `min(w, h)`, per §4.3. That makes the visible radius scale with the shape: a small lesion
+ * `0.08` of `min(w, h)`, per §4.3. That makes the visible radius scale with the shape: a small lesion
  * gets a small radius and a large one a large radius, without the annotator adjusting anything. The
  * inspector can change it per shape afterwards; `commitGeometry` clamps whatever it sets to `[0, 0.5]`.
+ *
+ * The default was 0.15 and read as a blob rather than as a box — at 15 % of the shorter side a roughly
+ * square shape looks round, which defeats the point of having a *box* tool distinct from a polygon. The
+ * scale runs to 0.5, where a square becomes a circle, so a sensible default sits nearer the bottom of
+ * it than the middle. Dragging the radius handle still reaches every value up to fully round.
  *
  * ## IoU ignores `r`
  *
@@ -27,7 +32,7 @@ import type { Draft, DrawingTool, ToolStep } from './tool';
 import { AnnotationType } from '@/types/domain';
 
 /** The radius a freshly drawn rounded box gets, as a fraction of its shorter side. */
-export const DEFAULT_CORNER_RADIUS = 0.15;
+export const DEFAULT_CORNER_RADIUS = 0.08;
 
 function finish(draft: Draft): ToolStep {
   return finishBoxDraft(draft, (box) => ({
